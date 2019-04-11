@@ -23,34 +23,33 @@ lazy val clusteredConfigService = project
     settings,
     assemblySettings,
     libraryDependencies ++= commonDependencies ++ Seq(
-    )
+      )
   )
   .dependsOn(
     common
   )
 
-val akkaVersion = "2.5.22"
+val akkaVersion     = "2.5.22"
 val akkaHttpVersion = "10.1.8"
 
 lazy val commonDependencies = Seq(
-  "com.typesafe" % "config" % "1.3.3",
-  "com.typesafe.akka" %% "akka-actor-typed" % akkaVersion,
-  "com.typesafe.akka" %% "akka-stream-typed" % akkaVersion,
-  "com.typesafe.akka" %% "akka-cluster-typed" % akkaVersion,
-  "com.typesafe.akka" %% "akka-cluster-typed" % akkaVersion,
-  "com.typesafe.akka" %% "akka-cluster-typed" % akkaVersion,
-  "com.typesafe.akka" %% "akka-persistence-typed" % akkaVersion,
-  "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
-
-  "org.scalatest" %% "scalatest" % "3.0.7" % Test,
+  "com.typesafe"      % "config"                    % "1.3.3",
+  "com.typesafe.akka" %% "akka-actor-typed"         % akkaVersion,
+  "com.typesafe.akka" %% "akka-stream-typed"        % akkaVersion,
+  "com.typesafe.akka" %% "akka-cluster-typed"       % akkaVersion,
+  "com.typesafe.akka" %% "akka-cluster-typed"       % akkaVersion,
+  "com.typesafe.akka" %% "akka-cluster-typed"       % akkaVersion,
+  "com.typesafe.akka" %% "akka-persistence-typed"   % akkaVersion,
+  "com.typesafe.akka" %% "akka-http"                % akkaHttpVersion,
+  "org.scalatest"     %% "scalatest"                % "3.0.7" % Test,
   "com.typesafe.akka" %% "akka-actor-testkit-typed" % akkaVersion % Test,
-  "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test
+  "com.typesafe.akka" %% "akka-http-testkit"        % akkaHttpVersion % Test
 )
 
 lazy val settings =
-  commonSettings ++
-  wartremoverSettings ++
-  scalafmtSettings
+commonSettings ++
+wartremoverSettings ++
+scalafmtSettings
 
 lazy val compilerOptions = Seq(
   "-unchecked",
