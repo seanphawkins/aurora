@@ -41,6 +41,8 @@ lazy val commonDependencies = Seq(
   "com.typesafe.akka" %% "akka-cluster-typed"       % akkaVersion,
   "com.typesafe.akka" %% "akka-persistence-typed"   % akkaVersion,
   "com.typesafe.akka" %% "akka-http"                % akkaHttpVersion,
+  "pdi"               %% "jwt-core"                 % "0.14.1",
+  
   "org.scalatest"     %% "scalatest"                % "3.0.7" % Test,
   "com.typesafe.akka" %% "akka-actor-testkit-typed" % akkaVersion % Test,
   "com.typesafe.akka" %% "akka-http-testkit"        % akkaHttpVersion % Test
