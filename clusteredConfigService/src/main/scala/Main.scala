@@ -50,8 +50,6 @@ object Main extends App {
 
 sealed trait CacheCommand
 object ConfigCache {
-  type Cache = Map[(String, String), String]
-
   final case class Get(env: String, key: String, replyTo: ActorRef[Option[String]]) extends CacheCommand
   final case class Put(env: String, key: String, data: String) extends CacheCommand
   final case class Delete(env: String, key: String) extends CacheCommand
@@ -61,7 +59,7 @@ object ConfigCache {
 
   def ephemeralBehavior: Behavior[CacheCommand] = Behaviors.setup { ctx =>
 
-    def b(c: Cache): Behavior[CacheCommand] = Behaviors.receive {
+    def b(c: Map[(String, String), String]): Behavior[CacheCommand] = Behaviors.receive {
       case (_, Get(e, k, r)) =>
         r ! c.get((e, k))
         Behavior.same
