@@ -1,17 +1,15 @@
 import akka.actor.typed.scaladsl.AskPattern._
-import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.actor.typed.scaladsl.adapter._
+import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, Behavior}
+import akka.cluster.ddata.typed.scaladsl.{DistributedData, Replicator, ReplicatorSettings}
+import akka.cluster.ddata.{LWWMap, LWWMapKey, SelfUniqueAddress}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Directives._
 import akka.stream.ActorMaterializer
 import akka.util.Timeout
 import akka.{actor => untyped}
 import com.typesafe.config.ConfigFactory
-import akka.cluster.Cluster
-import akka.cluster.ddata.{LWWMap, LWWMapKey, SelfUniqueAddress}
-import akka.cluster.ddata.typed.scaladsl.{DistributedData, Replicator, ReplicatorSettings}
-import akka.cluster.ddata.typed.scaladsl.Replicator._
 
 import scala.concurrent.duration._
 
@@ -59,7 +57,6 @@ object ConfigCache {
   final case class Delete(env: String, key: String) extends CacheCommand
   sealed trait InternalMsg extends CacheCommand
   private case class InternalUpdateResponse(rsp: Replicator.UpdateResponse[LWWMap[(String, String), String]]) extends InternalMsg
-  private case class InternalGetResponse(rsp: Replicator.GetResponse[LWWMap[(String, String), String]]) extends InternalMsg
   private case class InternalChanged(chg: Replicator.Changed[LWWMap[(String, String), String]]) extends InternalMsg
 
   def ephemeralBehavior: Behavior[CacheCommand] = Behaviors.setup { ctx =>
@@ -83,13 +80,11 @@ object ConfigCache {
     val mkey = LWWMapKey[(String, String), String]("ccKey")
     val updateResponseAdapter: ActorRef[Replicator.UpdateResponse[LWWMap[(String, String), String]]] =
       ctx.messageAdapter(InternalUpdateResponse.apply)
-    val getResponseAdapter: ActorRef[Replicator.GetResponse[LWWMap[(String, String), String]]] =
-      ctx.messageAdapter(InternalGetResponse.apply)
     val changedAdapter: ActorRef[Replicator.Changed[LWWMap[(String, String), String]]] =
       ctx.messageAdapter(InternalChanged.apply)
     replicator ! Replicator.Subscribe(mkey, changedAdapter)
 
-    def b(m: LWWMap[(String, String), String]): Behavior[CacheCommand] = Behaviors.receive[CacheCommand] {
+    def b(m: LWWMap[(String, String), String], mkey: LWWMapKey[(String, String), String], updateResponseAdapter: ActorRef[Replicator.UpdateResponse[LWWMap[(String, String), String]]]): Behavior[CacheCommand] = Behaviors.receive[CacheCommand] {
       case (_, Get(e, k, r)) =>
         r ! m.get((e, k))
         Behavior.same
@@ -99,20 +94,14 @@ object ConfigCache {
       case (_, Delete(e, k)) =>
         replicator ! Replicator.Update(mkey, m, Replicator.WriteLocal, updateResponseAdapter, None)(x => x.remove(node, (e, k)))
         Behavior.same
-      case (_, InternalUpdateResponse(u)) =>
-        Behavior.same
-      case (_, InternalGetResponse(rsp @ Replicator.GetSuccess(key, Some(replyTo: ActorRef[LWWMap[(String,String), String]])))) =>
-        val nv = rsp.get(key)
-        replyTo ! nv
-        b(nv)
-      case (_, _ : InternalGetResponse) =>
+      case (_, InternalUpdateResponse(_)) =>
         Behavior.same
       case (_, InternalChanged(c)) =>
-        b(c.get(mkey))
+        b(c.get(mkey), mkey, updateResponseAdapter)
       case (_, _) =>
         Behavior.same
     }
 
-    b(LWWMap.empty[(String, String), String])
+    b(LWWMap.empty[(String, String), String], mkey, updateResponseAdapter)
   }
 }
