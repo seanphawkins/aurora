@@ -25,7 +25,6 @@ trait ConfigSupport { this: App =>
         10.seconds
       )
     }.getOrElse("{}")
-    val cfg = ConfigFactory.parseString(rcs)
-    cfg.withFallback(ConfigFactory.load()).resolve
+    ConfigFactory.parseString(rcs).withFallback(ConfigFactory.load()).resolve
   }
 }
