@@ -15,7 +15,6 @@ trait ConfigSupport { this: App =>
     implicit val mat = ActorMaterializer()
     implicit val ec = system.dispatcher
     implicit val timeout = Timeout(10.second)
-
     val configKey = util.Properties.envOrNone("CONFIG.KEY")
     val configEnv = util.Properties.envOrElse("CONFIG.ENV", "dev")
     val configServer = util.Properties.envOrElse("CONFIG.SERVER", "localhost:9933")
