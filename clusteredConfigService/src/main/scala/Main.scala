@@ -5,9 +5,7 @@ import akka.actor.typed.{ActorRef, Behavior}
 import akka.cluster.ddata.typed.scaladsl.{DistributedData, Replicator, ReplicatorSettings}
 import akka.cluster.ddata.{LWWMap, LWWMapKey, SelfUniqueAddress}
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.server.{Directive, Directive1, Route}
 import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.util.Tuple
 import akka.stream.ActorMaterializer
 import akka.util.Timeout
 import akka.{actor => untyped}
