@@ -36,7 +36,6 @@ object Main extends App {
           throw new RuntimeException("Authentication error")
       }
       val env = cs("environment")
-      println(s"The environment is '$env'")
       path(Remaining) { key =>
         get {
           complete(
