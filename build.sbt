@@ -23,7 +23,8 @@ lazy val clusteredConfigService = project
     settings,
     assemblySettings,
     libraryDependencies ++= commonDependencies ++ Seq(
-      )
+      "com.jason-goodwin" %% "authentikat-jwt" % "0.4.5",
+    )
   )
   .dependsOn(
     common
@@ -41,7 +42,6 @@ lazy val commonDependencies = Seq(
   "com.typesafe.akka" %% "akka-cluster-typed"       % akkaVersion,
   "com.typesafe.akka" %% "akka-persistence-typed"   % akkaVersion,
   "com.typesafe.akka" %% "akka-http"                % akkaHttpVersion,
-  "pdi"               %% "jwt-core"                 % "0.14.1",
   "org.scalatest"     %% "scalatest"                % "3.0.7" % Test,
   "com.typesafe.akka" %% "akka-actor-testkit-typed" % akkaVersion % Test,
   "com.typesafe.akka" %% "akka-http-testkit"        % akkaHttpVersion % Test

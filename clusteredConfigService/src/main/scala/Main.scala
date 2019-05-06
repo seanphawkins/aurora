@@ -26,6 +26,7 @@ object Main extends App {
 
   val cache = system.spawn(ConfigCache.clusteredBehavior(replicator), "configCache")
 
+  // ToDo - JWT to provide environment context
   val route =
     path(".+".r / Remaining) { case (env, key) =>
       get {
