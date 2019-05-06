@@ -5,10 +5,13 @@ import akka.actor.typed.{ActorRef, Behavior}
 import akka.cluster.ddata.typed.scaladsl.{DistributedData, Replicator, ReplicatorSettings}
 import akka.cluster.ddata.{LWWMap, LWWMapKey, SelfUniqueAddress}
 import akka.http.scaladsl.Http
+import akka.http.scaladsl.server.{Directive, Directive1, Route}
 import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server.util.Tuple
 import akka.stream.ActorMaterializer
 import akka.util.Timeout
 import akka.{actor => untyped}
+import authentikat.jwt.JsonWebToken
 import com.typesafe.config.ConfigFactory
 
 import scala.concurrent.duration._
@@ -26,25 +29,35 @@ object Main extends App {
 
   val cache = system.spawn(ConfigCache.clusteredBehavior(replicator), "configCache")
 
-  // ToDo - JWT to provide environment context
   val route =
-    path(".+".r / Remaining) { case (env, key) =>
-      get {
-        complete((cache ? (r => ConfigCache.Get(env, key, r))).mapTo[Option[String]].map(resp => resp.getOrElse("""{}""")))
-      } ~
-      put {
-        decodeRequest {
-          entity(as[String]) { value =>
-            cache ! ConfigCache.Put(env, key, value)
+    headerValueByName("Authorization") { jwt =>
+      val cs: Map[String, String] = jwt match {
+        case JsonWebToken(header, claimsSet, signature) =>
+          claimsSet.asSimpleMap.get
+        case x =>
+          throw new RuntimeException("Authentication error")
+      }
+      val env = cs("environment")
+      println(s"The environment is '$env'")
+      path(Remaining) { key =>
+        get {
+          complete(
+            (cache ? (r => ConfigCache.Get(env, key, r))).mapTo[Option[String]].map(resp => resp.getOrElse("""{}""")))
+        } ~
+        put {
+          decodeRequest {
+            entity(as[String]) { value =>
+              cache ! ConfigCache.Put(env, key, value)
+              complete("""{"status":"OK"}""")
+            }
+          }
+        } ~
+        delete {
+          cache ! ConfigCache.Delete(env, key)
             complete("""{"status":"OK"}""")
           }
         }
-      } ~
-      delete {
-        cache ! ConfigCache.Delete(env, key)
-        complete("""{"status":"OK"}""")
       }
-    }
 
   Http().bindAndHandle(route, config.getString("httpHost"), config.getInt("httpPort"))
 }
