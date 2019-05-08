@@ -19,7 +19,7 @@ class ConfigSupportTest extends FlatSpec with Matchers {
     }
   val bindingFuture = Http().bindAndHandle(route, "localhost", 9876)
 
-  "ConfigSupport" should "" in {
+  "ConfigSupport" should "return the correct config values" in {
     val testApp = new TestApp
     testApp.testConfigString shouldBe "foo"
     testApp.testConfigString2 shouldBe "bar"
