@@ -36,14 +36,14 @@ object Main extends App {
           throw new RuntimeException("Authentication error")
       }
       val env = cs("environment")
-      path("admin") {
+      path("keys") {
         get {
           complete (
-            (cache ? (r => ListKeys(env, r))).mapTo[Seq[String]].map(ss => "[" +ss.mkString(", ") + "]")
+            (cache ? (r => ConfigCache.ListKeys(env, r))).mapTo[Seq[String]].map(ss => "[" +ss.mkString(", ") + "]")
           )
         }
       } ~
-      path(Remaining) { key =>
+      path("key" / Remaining) { key =>
         get {
           complete(
             (cache ? (r => ConfigCache.Get(env, key, r))).mapTo[Option[String]].map(resp => resp.getOrElse("""{}"""))
