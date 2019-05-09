@@ -1,3 +1,4 @@
+import ConfigCache.ListKeys
 import akka.actor.typed.scaladsl.AskPattern._
 import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
@@ -36,10 +37,18 @@ object Main extends App {
           throw new RuntimeException("Authentication error")
       }
       val env = cs("environment")
+      path("admin") {
+        get {
+          complete (
+            (cache ? (r => ListKeys(env, r))).mapTo[Seq[String]].map(ss => "[" +ss.mkString(", ") + "]")
+          )
+        }
+      } ~
       path(Remaining) { key =>
         get {
           complete(
-            (cache ? (r => ConfigCache.Get(env, key, r))).mapTo[Option[String]].map(resp => resp.getOrElse("""{}""")))
+            (cache ? (r => ConfigCache.Get(env, key, r))).mapTo[Option[String]].map(resp => resp.getOrElse("""{}"""))
+          )
         } ~
         put {
           decodeRequest {
@@ -61,6 +70,7 @@ object Main extends App {
 
 sealed trait CacheCommand
 object ConfigCache {
+  final case class ListKeys(env: String, replyTo: ActorRef[Seq[String]]) extends CacheCommand
   final case class Get(env: String, key: String, replyTo: ActorRef[Option[String]]) extends CacheCommand
   final case class Put(env: String, key: String, data: String) extends CacheCommand
   final case class Delete(env: String, key: String) extends CacheCommand
@@ -71,6 +81,9 @@ object ConfigCache {
   def ephemeralBehavior: Behavior[CacheCommand] = Behaviors.setup { ctx =>
 
     def b(c: Map[(String, String), String]): Behavior[CacheCommand] = Behaviors.receive {
+      case (_, ListKeys(e, r)) =>
+        r ! c.filterKeys(_._1 == e).keySet.toSeq.map(_._2)
+        Behavior.same
       case (_, Get(e, k, r)) =>
         r ! c.get((e, k))
         Behavior.same
@@ -94,6 +107,9 @@ object ConfigCache {
     replicator ! Replicator.Subscribe(mkey, changedAdapter)
 
     def b(m: LWWMap[(String, String), String], mkey: LWWMapKey[(String, String), String], updateResponseAdapter: ActorRef[Replicator.UpdateResponse[LWWMap[(String, String), String]]]): Behavior[CacheCommand] = Behaviors.receive[CacheCommand] {
+      case (_, ListKeys(e, r)) =>
+        r ! m.entries.keys.toSeq.collect{ case (e1, k) if e1 == e => k }
+        Behavior.same
       case (_, Get(e, k, r)) =>
         r ! m.get((e, k))
         Behavior.same
