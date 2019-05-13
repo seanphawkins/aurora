@@ -50,29 +50,30 @@ object RestApi {
           )
         }
       } ~
-        path("key" / Remaining) { key =>
-          get {
-            complete(
-              (cache ? (r => ConfigCache.Get(env, key, r))).mapTo[Option[String]].map(resp => resp.getOrElse("""{}"""))
-            )
-          } ~
-            put {
-              decodeRequest {
-                entity(as[String]) { value =>
-                  cache ! ConfigCache.Put(env, key, value)
-                  complete("""{"status":"OK"}""")
-                }
-              }
-            } ~
-            delete {
-              cache ! ConfigCache.Delete(env, key)
+      path("key" / Remaining) { key =>
+        get {
+          complete(
+            (cache ? (r => ConfigCache.Get(env, key, r))).mapTo[Option[String]].map(resp => resp.getOrElse("""{}"""))
+          )
+        } ~
+        put {
+          decodeRequest {
+            entity(as[String]) { value =>
+              cache ! ConfigCache.Put(env, key, value)
               complete("""{"status":"OK"}""")
             }
+          }
+        } ~
+        delete {
+          cache ! ConfigCache.Delete(env, key)
+          complete("""{"status":"OK"}""")
         }
+      }
     }
 }
 
 sealed trait CacheCommand
+
 object ConfigCache {
   final case class ListKeys(env: String, replyTo: ActorRef[Seq[String]]) extends CacheCommand
   final case class Get(env: String, key: String, replyTo: ActorRef[Option[String]]) extends CacheCommand
