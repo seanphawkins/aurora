@@ -1,3 +1,4 @@
+import akka.actor.{ActorSystem, Scheduler}
 import akka.actor.typed.scaladsl.AskPattern._
 import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
@@ -6,12 +7,14 @@ import akka.cluster.ddata.typed.scaladsl.{DistributedData, Replicator, Replicato
 import akka.cluster.ddata.{LWWMap, LWWMapKey, SelfUniqueAddress}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server.Route
 import akka.stream.ActorMaterializer
 import akka.util.Timeout
 import akka.{actor => untyped}
 import authentikat.jwt.JsonWebToken
 import com.typesafe.config.ConfigFactory
 
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
 object Main extends App {
@@ -27,7 +30,13 @@ object Main extends App {
 
   val cache = system.spawn(ConfigCache.clusteredBehavior(replicator), "configCache")
 
-  val route =
+  val route = RestApi.route(cache)
+
+  Http().bindAndHandle(route, config.getString("httpHost"), config.getInt("httpPort"))
+}
+
+object RestApi {
+  def route(cache: ActorRef[CacheCommand])(implicit system: ActorSystem, mat: ActorMaterializer, s: Scheduler, ec: ExecutionContext, timeout: Timeout): Route =
     headerValueByName("Authorization") { jwt =>
       val cs: Map[String, String] = jwt match {
         case JsonWebToken(header, claimsSet, signature) =>
@@ -43,28 +52,26 @@ object Main extends App {
           )
         }
       } ~
-      path("key" / Remaining) { key =>
-        get {
-          complete(
-            (cache ? (r => ConfigCache.Get(env, key, r))).mapTo[Option[String]].map(resp => resp.getOrElse("""{}"""))
-          )
-        } ~
-        put {
-          decodeRequest {
-            entity(as[String]) { value =>
-              cache ! ConfigCache.Put(env, key, value)
+        path("key" / Remaining) { key =>
+          get {
+            complete(
+              (cache ? (r => ConfigCache.Get(env, key, r))).mapTo[Option[String]].map(resp => resp.getOrElse("""{}"""))
+            )
+          } ~
+            put {
+              decodeRequest {
+                entity(as[String]) { value =>
+                  cache ! ConfigCache.Put(env, key, value)
+                  complete("""{"status":"OK"}""")
+                }
+              }
+            } ~
+            delete {
+              cache ! ConfigCache.Delete(env, key)
               complete("""{"status":"OK"}""")
             }
-          }
-        } ~
-        delete {
-          cache ! ConfigCache.Delete(env, key)
-            complete("""{"status":"OK"}""")
-          }
         }
-      }
-
-  Http().bindAndHandle(route, config.getString("httpHost"), config.getInt("httpPort"))
+    }
 }
 
 sealed trait CacheCommand
