@@ -30,9 +30,7 @@ object Main extends App {
 
   val cache = system.spawn(ConfigCache.clusteredBehavior(replicator), "configCache")
 
-  val route = RestApi.route(cache)
-
-  Http().bindAndHandle(route, config.getString("httpHost"), config.getInt("httpPort"))
+  Http().bindAndHandle(RestApi.route(cache), config.getString("httpHost"), config.getInt("httpPort"))
 }
 
 object RestApi {
