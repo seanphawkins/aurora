@@ -34,17 +34,19 @@ val akkaVersion     = "2.5.22"
 val akkaHttpVersion = "10.1.8"
 
 lazy val commonDependencies = Seq(
-  "com.typesafe"      % "config"                    % "1.3.3",
-  "com.typesafe.akka" %% "akka-actor-typed"         % akkaVersion,
-  "com.typesafe.akka" %% "akka-stream-typed"        % akkaVersion,
-  "com.typesafe.akka" %% "akka-cluster-typed"       % akkaVersion,
-  "com.typesafe.akka" %% "akka-cluster-typed"       % akkaVersion,
-  "com.typesafe.akka" %% "akka-cluster-typed"       % akkaVersion,
-  "com.typesafe.akka" %% "akka-persistence-typed"   % akkaVersion,
-  "com.typesafe.akka" %% "akka-http"                % akkaHttpVersion,
-  "org.scalatest"     %% "scalatest"                % "3.0.7" % Test,
-  "com.typesafe.akka" %% "akka-actor-testkit-typed" % akkaVersion % Test,
-  "com.typesafe.akka" %% "akka-http-testkit"        % akkaHttpVersion % Test
+  "com.typesafe"         % "config"                    % "1.3.3",
+  "com.typesafe.akka"    %% "akka-actor-typed"         % akkaVersion,
+  "com.typesafe.akka"    %% "akka-stream-typed"        % akkaVersion,
+  "com.typesafe.akka"    %% "akka-cluster-typed"       % akkaVersion,
+  "com.typesafe.akka"    %% "akka-cluster-typed"       % akkaVersion,
+  "com.typesafe.akka"    %% "akka-cluster-typed"       % akkaVersion,
+  "com.typesafe.akka"    %% "akka-persistence-typed"   % akkaVersion,
+  "com.typesafe.akka"    %% "akka-http"                % akkaHttpVersion,
+  "com.thesamet.scalapb" %% "scalapb-runtime"          % scalapb.compiler.Version.scalapbVersion % "protobuf",
+
+  "org.scalatest"        %% "scalatest"                % "3.0.7" % Test,
+  "com.typesafe.akka"    %% "akka-actor-testkit-typed" % akkaVersion % Test,
+  "com.typesafe.akka"    %% "akka-http-testkit"        % akkaHttpVersion % Test
 )
 
 lazy val settings =
@@ -75,6 +77,10 @@ lazy val commonSettings = Seq(
 
 lazy val wartremoverSettings = Seq(
   wartremoverWarnings in (Compile, compile) ++= Warts.allBut(Wart.Throw)
+)
+
+PB.targets in Compile := Seq(
+  scalapb.gen() -> (sourceManaged in Compile).value
 )
 
 lazy val scalafmtSettings =
