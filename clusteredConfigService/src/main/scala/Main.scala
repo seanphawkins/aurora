@@ -103,6 +103,7 @@ object ConfigCache {
     b(Map.empty)
   }
 
+  // TODO - rewrite to separate by environment, multiple LWWMaps
   def clusteredBehavior(replicator: ActorRef[Replicator.Command])(implicit node: SelfUniqueAddress): Behavior[CacheCommand] = Behaviors.setup[CacheCommand] { ctx: ActorContext[CacheCommand] =>
     val mkey = LWWMapKey[(String, String), String]("ccKey")
     val updateResponseAdapter: ActorRef[Replicator.UpdateResponse[LWWMap[(String, String), String]]] =

@@ -14,7 +14,9 @@ lazy val common = project
   .settings(
     name := "common",
     settings,
-    libraryDependencies ++= commonDependencies
+    libraryDependencies ++= commonDependencies ++ Seq(
+      "com.enragedginger" %% "akka-quartz-scheduler" % "1.8.0-akka-2.5.x",
+    )
   )
 
 lazy val clusteredConfigService = project
