@@ -4,6 +4,7 @@ import java.util.{Date, UUID}
 
 import akka.actor.Props
 import akka.actor.typed.ActorRef
+/*
 import com.typesafe.akka.extension.quartz.QuartzSchedulerExtension
 
 trait SchedulingSupport { this: AkkaSupport =>
@@ -23,3 +24,4 @@ trait SchedulingSupport { this: AkkaSupport =>
     }
   }
 }
+*/

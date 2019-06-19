@@ -1,8 +1,8 @@
-import akka.actor.{ActorSystem, Scheduler}
 import akka.actor.typed.scaladsl.AskPattern._
 import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, Behavior}
+import akka.actor.{ActorSystem, Scheduler}
 import akka.cluster.ddata.typed.scaladsl.{DistributedData, Replicator, ReplicatorSettings}
 import akka.cluster.ddata.{LWWMap, LWWMapKey, SelfUniqueAddress}
 import akka.http.scaladsl.Http
@@ -11,11 +11,14 @@ import akka.http.scaladsl.server.Route
 import akka.stream.ActorMaterializer
 import akka.util.Timeout
 import akka.{actor => untyped}
-import authentikat.jwt.JsonWebToken
 import com.typesafe.config.ConfigFactory
-
+import pdi.jwt.{Jwt, JwtAlgorithm}
+import java.time.Clock
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
+import org.json4s._
+import org.json4s.native.JsonMethods._
+
 
 object Main extends App {
   implicit val config = ConfigFactory.load().resolve
@@ -27,22 +30,18 @@ object Main extends App {
   implicit val typedSystem = system.toTyped
   implicit val node = DistributedData(typedSystem).selfUniqueAddress
   implicit val replicator = system.spawn(Replicator.behavior(ReplicatorSettings(typedSystem)), "replicator")
+  implicit val clock: Clock = Clock.systemUTC
+  implicit val formats = DefaultFormats
 
   val cache = system.spawn(ConfigCache.clusteredBehavior(replicator), "configCache")
 
-  Http().bindAndHandle(RestApi.route(cache), config.getString("httpHost"), config.getInt("httpPort"))
+  Http().bindAndHandle(RestApi.route(cache, config.getString("kwtKey")), config.getString("httpHost"), config.getInt("httpPort"))
 }
 
 object RestApi {
-  def route(cache: ActorRef[CacheCommand])(implicit system: ActorSystem, mat: ActorMaterializer, s: Scheduler, ec: ExecutionContext, timeout: Timeout): Route =
+  def route(cache: ActorRef[CacheCommand], key: String)(implicit system: ActorSystem, mat: ActorMaterializer, s: Scheduler, ec: ExecutionContext, timeout: Timeout, clock: Clock, formats: Formats): Route =
     headerValueByName("Authorization") { jwt =>
-      val cs: Map[String, String] = jwt match {
-        case JsonWebToken(header, claimsSet, signature) =>
-          claimsSet.asSimpleMap.get
-        case x =>
-          throw new RuntimeException("Authentication error")
-      }
-      val env = cs("environment")
+      val env = Jwt.decodeRawAll(jwt, key, Seq(JwtAlgorithm.HS256)).map{ case(_, j, _) => compact(render(parse(j) \ "environment")) }.getOrElse("DEV")
       path("keys") {
         get {
           complete (
@@ -87,7 +86,7 @@ object ConfigCache {
 
     def b(c: Map[(String, String), String]): Behavior[CacheCommand] = Behaviors.receive {
       case (_, ListKeys(e, r)) =>
-        r ! c.filterKeys(_._1 == e).keySet.toSeq.map(_._2)
+        r ! c.view.filterKeys(_._1 == e).keySet.toSeq.map(_._2)
         Behavior.same
       case (_, Get(e, k, r)) =>
         r ! c.get((e, k))

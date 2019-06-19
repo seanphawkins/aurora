@@ -23,7 +23,7 @@ trait EnvMetaConfig extends MetaConfig {
   val configServer = util.Properties.envOrElse("CONFIG.SERVER", "localhost:9933")
   val tokenFile = util.Properties.envOrElse("CONFIG.KEYFILE", "./.configaccesskey")
   val token = Source.fromFile(tokenFile).getLines().mkString
-}`
+}
 
 trait ConfigSupport { this: App with MetaConfig =>
   implicit val config: Config = {

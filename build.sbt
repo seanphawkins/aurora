@@ -1,6 +1,6 @@
 name := "aurora"
 organization in ThisBuild := "net.asynchorswim"
-scalaVersion in ThisBuild := "2.12.8"
+scalaVersion in ThisBuild := "2.13.0"
 
 lazy val global = project
   .in(file("."))
@@ -15,7 +15,7 @@ lazy val common = project
     name := "common",
     settings,
     libraryDependencies ++= commonDependencies ++ Seq(
-      "com.enragedginger" %% "akka-quartz-scheduler" % "1.8.0-akka-2.5.x",
+      // "com.enragedginger" %% "akka-quartz-scheduler" % "1.8.0-akka-2.5.x",
     )
   )
 
@@ -23,16 +23,17 @@ lazy val clusteredConfigService = project
   .settings(
     name := "clusteredConfigService",
     settings,
-    assemblySettings,
+//    assemblySettings,
     libraryDependencies ++= commonDependencies ++ Seq(
-      "com.jason-goodwin" %% "authentikat-jwt" % "0.4.5",
+      "org.json4s" %% "json4s-native" % "3.6.6",
+      "com.pauldijou" %% "jwt-core" % "3.0.1",
     )
   )
   .dependsOn(
     common
   )
 
-val akkaVersion     = "2.5.22"
+val akkaVersion     = "2.5.23"
 val akkaHttpVersion = "10.1.8"
 
 lazy val commonDependencies = Seq(
@@ -44,17 +45,17 @@ lazy val commonDependencies = Seq(
   "com.typesafe.akka"    %% "akka-cluster-typed"       % akkaVersion,
   "com.typesafe.akka"    %% "akka-persistence-typed"   % akkaVersion,
   "com.typesafe.akka"    %% "akka-http"                % akkaHttpVersion,
-  "com.thesamet.scalapb" %% "scalapb-runtime"          % scalapb.compiler.Version.scalapbVersion % "protobuf",
+//  "com.thesamet.scalapb" %% "scalapb-runtime"          % scalapb.compiler.Version.scalapbVersion % "protobuf",
 
-  "org.scalatest"        %% "scalatest"                % "3.0.7" % Test,
+  "org.scalatest"        %% "scalatest"                % "3.0.8" % Test,
   "com.typesafe.akka"    %% "akka-actor-testkit-typed" % akkaVersion % Test,
   "com.typesafe.akka"    %% "akka-http-testkit"        % akkaHttpVersion % Test
 )
 
 lazy val settings =
-commonSettings ++
-wartremoverSettings ++
-scalafmtSettings
+commonSettings //  ++
+//wartremoverSettings ++
+//scalafmtSettings
 
 lazy val compilerOptions = Seq(
   "-unchecked",
@@ -77,25 +78,25 @@ lazy val commonSettings = Seq(
   )
 )
 
-lazy val wartremoverSettings = Seq(
-  wartremoverWarnings in (Compile, compile) ++= Warts.allBut(Wart.Throw)
-)
+//lazy val wartremoverSettings = Seq(
+//  wartremoverWarnings in (Compile, compile) ++= Warts.allBut(Wart.Throw)
+//)
 
-PB.targets in Compile := Seq(
-  scalapb.gen() -> (sourceManaged in Compile).value
-)
+//PB.targets in Compile := Seq(
+//  scalapb.gen() -> (sourceManaged in Compile).value
+//)
 
-lazy val scalafmtSettings =
-  Seq(
-    scalafmtOnCompile := true,
-    scalafmtTestOnCompile := true,
-    scalafmtVersion := "1.2.0"
-  )
+//lazy val scalafmtSettings =
+//  Seq(
+//    scalafmtOnCompile := true,
+//    scalafmtTestOnCompile := true,
+//    scalafmtVersion := "1.2.0"
+//  )
 
-lazy val assemblySettings = Seq(
-  assemblyJarName in assembly := name.value + ".jar",
-  assemblyMergeStrategy in assembly := {
-    case PathList("META-INF", xs @ _*) => MergeStrategy.discard
-    case _                             => MergeStrategy.first
-  }
-)
+//lazy val assemblySettings = Seq(
+//  assemblyJarName in assembly := name.value + ".jar",
+//  assemblyMergeStrategy in assembly := {
+//    case PathList("META-INF", xs @ _*) => MergeStrategy.discard
+//    case _                             => MergeStrategy.first
+//  }
+//)

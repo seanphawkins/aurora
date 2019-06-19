@@ -1,7 +1,8 @@
-import authentikat.jwt._
+import java.time.Clock
+
+import pdi.jwt.{Jwt, JwtAlgorithm}
 
 object CreateToken extends App {
-  val header = JwtHeader("HS256")
-  val claimsSet = JwtClaimsSet(Map("environment" -> args(0)))
-  println(JsonWebToken(header, claimsSet, args(1)))
+  implicit val clock: Clock = Clock.systemUTC
+  println(Jwt.encode(s"""{"environment":"${args(0)}"}""", args(1), JwtAlgorithm.HS256))
 }
