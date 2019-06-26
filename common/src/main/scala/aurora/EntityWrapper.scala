@@ -49,8 +49,6 @@ private[aurora] object EntityWrapper {
     }
   }
 
-  // FIXME
-  /*
   def eventSourcedEntityWrapper[A <: Entity[A, C, Q, E, R], C, Q <: Query[R], E <: Event, R](init: A, name: String)(implicit e1: ClassTag[A], e2: ClassTag[C], e3: ClassTag[Q], e4: ClassTag[E], e5: ClassTag[R], cfg: EntityConfig[C]): Behavior[EntityWrapperCommand[C, Q, R]] = {
     Behaviors.setup[EntityWrapperCommand[C, Q, R]] { ctx =>
       cfg.ttl match {
@@ -61,22 +59,22 @@ private[aurora] object EntityWrapper {
       EventSourcedBehavior[EntityWrapperCommand[C, Q, R], E, A](
         persistenceId = PersistenceId(name),
         emptyState = init,
-        commandHandler = {
-          case (_, state, ProcessCommand(c, ort)) =>
+        commandHandler =  {
+          case (state, ProcessCommand(c, ort)) =>
             val events = state.receive(cf, c)
             val ee = events.filter(_.isInstanceOf[Externalized])
             val ae = collection.immutable.Seq(events.filterNot(_.isInstanceOf[Informational]):_*)
             ort foreach {_ ! ee :+ CommandComplete }
             if (ae.isEmpty) Effect.none else Effect.persist(ae)
-          case (_, state, ProcessQuery(q, rt)) =>
+          case (state, ProcessQuery(q, rt)) =>
             rt ! state.receiveQuery(cf, q)
             Effect.none
-          case (_, _, Stop(_)) =>
-            Effect.stop
-          case (actx, _, GenerateInterfaces(r)) =>
-            val ch = actx.messageAdapter[C]( m => ProcessCommand(m, None))
-            val sch = actx.messageAdapter[EventReplyEnvelope[C]]( m => ProcessCommand(m.c, Some(m.replyTo)))
-            val qh = actx.messageAdapter[Q](q => ProcessQuery(q, q.replyTo))
+          case (_, Stop(_)) =>
+            Effect.stop()
+          case (_, GenerateInterfaces(r)) =>
+            val ch = ctx.messageAdapter[C]( m => ProcessCommand(m, None))
+            val sch = ctx.messageAdapter[EventReplyEnvelope[C]]( m => ProcessCommand(m.c, Some(m.replyTo)))
+            val qh = ctx.messageAdapter[Q](q => ProcessQuery(q, q.replyTo))
             r ! (ch, sch, qh)
             Effect.none
         },
@@ -86,8 +84,6 @@ private[aurora] object EntityWrapper {
       ).snapshotWhen((_, e, _) => e.isInstanceOf[SnapshotTrigger])
     }
   }
-
-  */
 
   def persistentEntityWrapper[A <: Entity[A, C, Q, E, R], C, Q <: Query[R], E <: Event, R](init: A, name: String)(implicit e1: ClassTag[A], e2: ClassTag[C], e3: ClassTag[Q], e4: ClassTag[E], e5: ClassTag[R], cfg: EntityConfig[C], pa: PersistenceAdapter[A]): Behavior[EntityWrapperCommand[C, Q, R]] = {
 

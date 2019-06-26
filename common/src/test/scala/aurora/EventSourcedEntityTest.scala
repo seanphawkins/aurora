@@ -12,7 +12,7 @@ import aurora.EntitySupport._
 
 import scala.concurrent.{Await, Promise}
 
-class PersistentEntityTest extends AsyncFlatSpec with Matchers with BeforeAndAfterAll {
+class EventSourcedEntityTest extends AsyncFlatSpec with Matchers with BeforeAndAfterAll {
   var cci: ActorRef[CounterCommand] = _
   var sci: ActorRef[EventReplyEnvelope[CounterCommand]] = _
   var cqi: ActorRef[CounterQuery] = _
@@ -20,12 +20,11 @@ class PersistentEntityTest extends AsyncFlatSpec with Matchers with BeforeAndAft
   implicit var scheduler: Scheduler = _
   implicit val timeout: Timeout = Timeout(10.seconds)
   implicit val ecx: EntityConfig[CounterCommand] = EntityConfig[CounterCommand]()
-  implicit val pa: PersistenceAdapter[Counter] = new CounterPersistenceAdapter(("myTestCounter", 100), ("anotherCounter", 22))
 
   override def beforeAll(): Unit = {
     val p = Promise[Boolean]()
     system = ActorSystem(Behaviors.setup[Any] { ctx =>
-      val (ar1, ar2, ar3) = ctx.spawnPersistent[Counter, CounterCommand, CounterQuery, CounterEvent, Long](Counter(0), "myTestCounter")
+      val (ar1, ar2, ar3) = ctx.spawnEventSourced[Counter, CounterCommand, CounterQuery, CounterEvent, Long](Counter(0), "myTestCounter")
       cci = ar1
       sci = ar2
       cqi = ar3
@@ -38,9 +37,9 @@ class PersistentEntityTest extends AsyncFlatSpec with Matchers with BeforeAndAft
 
   override def afterAll(): Unit = system.terminate()
 
-  "Transient Entities" should "handle basic commands and queires" in {
+  "Event Sourced Entities" should "handle basic commands and queries" in {
     (0 to 100) foreach { i => cci ! Increment }
-    (cqi ? { r: ActorRef[Long] => QueryValue(r)}) map { _ should be (201) }
+    (cqi ? { r: ActorRef[Long] => QueryValue(r)}) map { _ should be (101) }
   }
 
   it should "return events from the streaming interface" in {

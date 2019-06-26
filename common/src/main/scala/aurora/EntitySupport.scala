@@ -23,13 +23,10 @@ object EntitySupport {
       Await.result(a ? {r => GenerateInterfaces(r)}, 100.seconds)
     }
 
-    // FIXME
-    /*
     def spawnEventSourced[A <: Entity[A, C, Q, E, R], C, Q <: Query[R], E <: Event, R](init: A, name: String)(implicit e1: ClassTag[A], e2: ClassTag[C], e3: ClassTag[Q], e4: ClassTag[E], e5: ClassTag[R], cfg: EntityConfig[C], timeout: Timeout, scheduler: Scheduler): (ActorRef[C], ActorRef[EventReplyEnvelope[C]], ActorRef[Q]) = {
       val a = underlying.asScala.spawn(EntityWrapper.eventSourcedEntityWrapper[A, C, Q, E, R](init, name), name)
       Await.result(a ? {r => GenerateInterfaces(r)}, 100.seconds)
     }
-    */
 
     def spawnPersistent[A <: Entity[A, C, Q, E, R], C, Q <: Query[R], E <: Event, R](init: A, name: String)(implicit e1: ClassTag[A], e2: ClassTag[C], e3: ClassTag[Q], e4: ClassTag[E], e5: ClassTag[R], cfg: EntityConfig[C],  timeout: Timeout, scheduler: Scheduler, pa: PersistenceAdapter[A]): (ActorRef[C], ActorRef[EventReplyEnvelope[C]], ActorRef[Q]) = {
       val a = underlying.asScala.spawn(EntityWrapper.persistentEntityWrapper[A, C, Q, E, R](init, name), name)
