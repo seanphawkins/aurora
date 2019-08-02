@@ -15,7 +15,7 @@ lazy val common = project
     name := "common",
     settings,
     libraryDependencies ++= commonDependencies ++ Seq(
-      "com.github.dnvriend" %% "akka-persistence-inmemory" % "2.5.15.1",
+      // "com.github.dnvriend" %% "akka-persistence-inmemory" % "2.5.15.1",
       // "com.enragedginger" %% "akka-quartz-scheduler" % "1.8.0-akka-2.5.x",
     )
   )
