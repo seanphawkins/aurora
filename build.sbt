@@ -10,13 +10,19 @@ lazy val global = project
     clusteredConfigService
   )
 
+val jsoniterVersion = "0.54.0"
+
 lazy val common = project
   .settings(
     name := "common",
     settings,
     libraryDependencies ++= commonDependencies ++ Seq(
       // "com.github.dnvriend" %% "akka-persistence-inmemory" % "2.5.15.1",
-      // "com.enragedginger" %% "akka-quartz-scheduler" % "1.8.0-akka-2.5.x",
+      "com.enragedginger" %% "akka-quartz-scheduler" % "1.8.1-akka-2.5.x",
+
+      "com.github.plokhotnyuk.jsoniter-scala" %% "jsoniter-scala-core"   % jsoniterVersion % Compile,
+      "com.github.plokhotnyuk.jsoniter-scala" %% "jsoniter-scala-macros" % jsoniterVersion % Provided,
+
     )
   )
 

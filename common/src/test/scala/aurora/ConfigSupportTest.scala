@@ -32,7 +32,7 @@ class  TestApp extends App with ConfigSupport with TestMetaConfig {
 }
 
 trait TestMetaConfig extends MetaConfig {
-  override def configServer = "localhost:9876"
+  override def configServer = Option("localhost:9876")
   override def configKey = "TEST"
   override def token = "xxxxxxxxxxxx"
 }
