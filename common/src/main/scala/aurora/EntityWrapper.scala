@@ -138,10 +138,9 @@ object AggregateEntityFactory {
   def transient[A <: Entity[A, C, Q, E, R], C, Q <: Query[R], E <: Event, R](init: A, name: String)(implicit e1: ClassTag[A], e2: ClassTag[C], e3: ClassTag[Q], e4: ClassTag[E], e5: ClassTag[R], cfg: EntityConfig[C]): Behavior[EntityWrapperCommand[C, Q, R]] =
     EntityWrapper.transientEntityWrapper[A, C, Q, E, R](init)
 
-  /*
+
   def eventSourced[A <: Entity[A, C, Q, E, R], C, Q <: Query[R], E <: Event, R](init: A, name: String)(implicit e1: ClassTag[A], e2: ClassTag[C], e3: ClassTag[Q], e4: ClassTag[E], e5: ClassTag[R], cfg: EntityConfig[C]): Behavior[EntityWrapperCommand[C, Q, R]] =
     EntityWrapper.eventSourcedEntityWrapper[A, C, Q, E, R](init, name)
-  */
 
   def persistent[A <: Entity[A, C, Q, E, R], C, Q <: Query[R], E <: Event, R](init: A, name: String)(implicit e1: ClassTag[A], e2: ClassTag[C], e3: ClassTag[Q], e4: ClassTag[E], e5: ClassTag[R], cfg: EntityConfig[C], pa: PersistenceAdapter[A]): Behavior[EntityWrapperCommand[C, Q, R]] =
     EntityWrapper.persistentEntityWrapper[A, C, Q, E, R](init, name)

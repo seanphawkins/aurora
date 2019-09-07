@@ -13,29 +13,36 @@ import scala.concurrent.duration._
 import scala.io.Source
 
 trait MetaConfig {
-  def configServer: String
+  def configServer: Option[String]
   def configKey: String
   def token: String
 }
 
 trait EnvMetaConfig extends MetaConfig {
   val configKey = util.Properties.envOrElse("CONFIG.KEY", "DEFAULT")
-  val configServer = util.Properties.envOrElse("CONFIG.SERVER", "localhost:9933")
+  val configServer = Option(util.Properties.envOrElse("CONFIG.SERVER", "localhost:9933"))
   val tokenFile = util.Properties.envOrElse("CONFIG.KEYFILE", "./.configaccesskey")
   val token = Source.fromFile(tokenFile).getLines().mkString
 }
 
+trait LocalOnlyMetaConfig extends MetaConfig {
+  def configServer: Option[String] = None
+  def configKey: String = ""
+  def token: String = ""
+}
+
 trait ConfigSupport { this: App with MetaConfig =>
   implicit val config: Config = {
-    implicit val system = ActorSystem("configTempSystem", ConfigFactory.empty)
-    implicit val mat = ActorMaterializer()
-    implicit val ec = system.dispatcher
-    implicit val timeout = Timeout(10.second)
-    val rcs: String = Await.result(
-      Http().singleRequest(HttpRequest(uri = s"http://$configServer/$configKey").addHeader(RawHeader("Authorization", token)))
-        .flatMap(resp => Unmarshal(resp.entity).to[String]),
-      10.seconds
-    )
+    val rcs: String = configServer.map { csvr =>
+      implicit val system = ActorSystem("configTempSystem", ConfigFactory.empty)
+      implicit val mat = ActorMaterializer()
+      implicit val ec = system.dispatcher
+      implicit val timeout = Timeout(10.second)
+      Await.result(
+        Http().singleRequest(HttpRequest(uri = s"http://$csvr/$configKey").addHeader(RawHeader("Authorization", token)))
+          .flatMap(resp => Unmarshal(resp.entity).to[String]),
+        10.seconds)
+    }.getOrElse("")
     ConfigFactory.parseString(rcs).withFallback(ConfigFactory.load()).resolve
   }
 }

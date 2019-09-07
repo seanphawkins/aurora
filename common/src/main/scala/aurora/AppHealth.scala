@@ -2,6 +2,8 @@ package aurora
 
 import java.time.Instant
 import java.util.concurrent.atomic.{AtomicLong, AtomicReference}
+import java.util.TimerTask
+import java.util.Timer
 
 import akka.actor.typed.Logger
 import akka.event.Logging
@@ -32,31 +34,37 @@ object Severity {
   }
 }
 
-case class Issue(id: IssueId, correlationId: String, severity: Severity, message: String, created: Instant, canBeCleared: () => Boolean)
+case class IssueData(id: IssueId, correlationId: String, severity: Severity, message: String, created: Instant)
+case class Issue(data: IssueData, canBeCleared: () => Boolean)
 
 object AppHealth {
   import Severity._
 
+  val timer = new Timer()
+  timer.schedule(new TimerTask() { def run() = AppHealth.autoClear()}, 10000L)
+
+  private def autoClear() = getAndTransform[Seq[Issue]](issues, _.filterNot(_.canBeCleared()))
+
   private val issues: AtomicReference[Seq[Issue]] = new AtomicReference(Seq.empty)
 
-  def createIssue(correlationId: String, severity: Severity, message: String, canBeCleared: () => Boolean = () => { false }): IssueId = {
+  def createIssue(correlationId: String, severity: Severity, message: String, canBeCleared: () => Boolean = () => false): IssueId = {
     val newIssueId = IssueId.next
-    val newIssue = Issue(newIssueId, correlationId, severity, message, Instant.now(), canBeCleared)
+    val newIssue = Issue(IssueData(newIssueId, correlationId, severity, message, Instant.now()), canBeCleared)
     getAndTransform[Seq[Issue]](issues, { _ :+ newIssue })
     newIssueId
   }
 
-  def clear(id: IssueId): Unit = getAndTransform[Seq[Issue]](issues, { _.filterNot(_.id == id) })
-  def clear(cid: String): Unit = getAndTransform[Seq[Issue]](issues, { _.filterNot(_.correlationId == cid) })
+  def clear(id: IssueId): Unit = getAndTransform[Seq[Issue]](issues, { _.filterNot(_.data.id == id) })
+  def clear(cid: String): Unit = getAndTransform[Seq[Issue]](issues, { _.filterNot(_.data.correlationId == cid) })
 
-  def current: Severity = issues.get.map(_.severity).toSet match {
+  def current: Severity = issues.get.map(_.data.severity).toSet match {
     case s1 if s1.contains(FATAL) => FATAL
     case s1 if s1.contains(ERROR) => ERROR
     case s1 if s1.contains(WARN) => WARN
     case _ => OK
   }
 
-  def openIssues: Seq[Issue] = issues.get()
+  def openIssues: Seq[IssueData] = issues.get().map(_.data)
 
   @tailrec def getAndTransform[A](v: AtomicReference[A], transform: A => A): A = {
     val oldValue = v.get()

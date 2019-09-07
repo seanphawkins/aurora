@@ -1,23 +1,19 @@
 package aurora
 
-import java.io.File
-
 import akka.actor.Scheduler
-import akka.actor.typed.{ActorRef, ActorSystem, Behavior, Logger, Props}
+import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
-import akka.cluster.typed.{Cluster, ClusterSingleton, ClusterSingletonSettings}
+import akka.actor.typed.{ActorRef, ActorSystem, Behavior, Logger}
+import akka.cluster.typed.{Cluster, ClusterSingleton}
 import akka.stream.ActorMaterializer
 import akka.util.Timeout
 import akka.{actor => untyped}
-import akka.actor.typed.scaladsl.adapter._
-import com.typesafe.config.{Config, ConfigFactory}
 
 import scala.concurrent.ExecutionContext
-import scala.util.Try
 
 trait AkkaSupport { this: ConfigSupport =>
   implicit val timeout: Timeout = Timeout(config.getDuration("akka.timeout"))
-  val untypedSystem = untyped.ActorSystem(config.getString("akka.actorSystemName"), config)
+  implicit val untypedSystem: untyped.ActorSystem = untyped.ActorSystem(config.getString("akka.actorSystemName"), config)
   implicit val system: ActorSystem[Nothing] = untypedSystem.toTyped
   implicit val scheduler: Scheduler = system.scheduler
   implicit val ec: ExecutionContext = system.executionContext
@@ -30,15 +26,15 @@ trait ClusterSupport { this: AkkaSupport =>
   val singletonManager = ClusterSingleton(system)
 }
 
-trait Microservice extends ConfigSupport with EnvMetaConfig with AkkaSupport { this: App =>
+trait Microservice extends ConfigSupport with AkkaSupport { this: App with MetaConfig  =>
   def logic: ActorContext[MicroserviceCommand] => Unit
 }
 
-trait SimpleMicroservice extends Microservice { this: App =>
+trait SimpleMicroservice extends Microservice { this: App with MetaConfig  =>
   untypedSystem.spawn[MicroserviceCommand](Microservice.behavior(logic), "logic")
 }
 
-trait ClusteredMicrosevice extends Microservice with ClusterSupport { this: App =>
+trait ClusteredMicrosevice extends Microservice with ClusterSupport { this: App with MetaConfig =>
   untypedSystem.spawn[MicroserviceCommand](Microservice.behavior(logic), "logic")
 }
 
@@ -57,7 +53,7 @@ sealed trait MicroserviceCommand
 object Microservice {
   case object Terminate extends MicroserviceCommand
   final case class GetApplicationStatus(replyTo: ActorRef[String]) extends MicroserviceCommand
-  final case class GetIssues(replyTo: ActorRef[Seq[Issue]]) extends MicroserviceCommand
+  final case class GetIssues(replyTo: ActorRef[Seq[IssueData]]) extends MicroserviceCommand
 
   def behavior(l: ActorContext[MicroserviceCommand] => Unit): Behavior[MicroserviceCommand] =
     Behaviors.setup { cx =>

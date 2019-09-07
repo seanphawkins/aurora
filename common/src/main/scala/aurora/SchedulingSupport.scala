@@ -4,8 +4,7 @@ import java.util.{Date, UUID}
 
 import akka.actor.Props
 import akka.actor.typed.ActorRef
-// TODO - Re-enable when akka quartz scheduler is recompiled for 2.13.
-/*
+
 import com.typesafe.akka.extension.quartz.QuartzSchedulerExtension
 
 trait SchedulingSupport { this: AkkaSupport =>
@@ -25,4 +24,3 @@ trait SchedulingSupport { this: AkkaSupport =>
     }
   }
 }
-*/
