@@ -1,5 +1,5 @@
 name := "aurora"
-organization in ThisBuild := "net.asynchorswim"
+organization in ThisBuild := "com.vorpalideas"
 scalaVersion in ThisBuild := "2.13.0"
 
 lazy val global = project
@@ -30,7 +30,7 @@ lazy val clusteredConfigService = project
   .settings(
     name := "clusteredConfigService",
     settings,
-//    assemblySettings,
+    //    assemblySettings,
     libraryDependencies ++= commonDependencies ++ Seq(
       "org.json4s" %% "json4s-native" % "3.6.6",
       "com.pauldijou" %% "jwt-core" % "3.0.1",
@@ -40,8 +40,8 @@ lazy val clusteredConfigService = project
     common
   )
 
-val akkaVersion     = "2.5.23"
-val akkaHttpVersion = "10.1.8"
+val akkaVersion     = "2.5.25"
+val akkaHttpVersion = "10.1.10"
 
 lazy val commonDependencies = Seq(
   "com.typesafe"         % "config"                    % "1.3.3",
@@ -51,7 +51,7 @@ lazy val commonDependencies = Seq(
   "com.typesafe.akka"    %% "akka-cluster-sharding-typed"       % akkaVersion,
   "com.typesafe.akka"    %% "akka-persistence-typed"   % akkaVersion,
   "com.typesafe.akka"    %% "akka-http"                % akkaHttpVersion,
-//  "com.thesamet.scalapb" %% "scalapb-runtime"          % scalapb.compiler.Version.scalapbVersion % "protobuf",
+  //  "com.thesamet.scalapb" %% "scalapb-runtime"          % scalapb.compiler.Version.scalapbVersion % "protobuf",
 
   "org.scalatest"        %% "scalatest"                % "3.0.8" % Test,
   "com.typesafe.akka"    %% "akka-actor-testkit-typed" % akkaVersion % Test,
@@ -59,7 +59,7 @@ lazy val commonDependencies = Seq(
 )
 
 lazy val settings =
-commonSettings //  ++
+  commonSettings //  ++
 //wartremoverSettings ++
 //scalafmtSettings
 

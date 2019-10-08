@@ -38,14 +38,10 @@ object EntitySupport {
       Await.result(a ? { r : ActorRef[(ActorRef[ShardingEnvelope[C]], ActorRef[ShardingEnvelope[EventReplyEnvelope[C]]], ActorRef[ShardingEnvelope[Q]])] => GenerateAggregateInterfaces[C, Q, R](r)}, 100.seconds)
     }
 
-    // FIXME - Reinstate when fixed in EntityWrapper
-    /*
     def spawnClusterAggregate[A <: Entity[A, C, Q, E, R], C, Q <: Query[R], E <: Event, R](init: A, name: String, create: (A, String) => Behavior[EntityWrapperCommand[C, Q, R]])(implicit e1: ClassTag[A], e2: ClassTag[C], e3: ClassTag[Q], e4: ClassTag[E], e5: ClassTag[R], cfg: EntityConfig[C], timeout: Timeout, scheduler: Scheduler): (ActorRef[ShardingEnvelope[C]], ActorRef[ShardingEnvelope[EventReplyEnvelope[C]]], ActorRef[ShardingEnvelope[Q]]) = {
       val a = underlying.asScala.spawn(Aggregate.clusterAggregate[A, C, Q, E, R](init, name, create), name)
       Await.result(a ? { r : ActorRef[(ActorRef[ShardingEnvelope[C]], ActorRef[ShardingEnvelope[EventReplyEnvelope[C]]], ActorRef[ShardingEnvelope[Q]])] => GenerateAggregateInterfaces[C, Q, R](r)}, 100.seconds)
     }
-
-    */
 
   }
 }

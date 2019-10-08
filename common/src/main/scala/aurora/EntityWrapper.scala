@@ -44,7 +44,7 @@ private[aurora] object EntityWrapper {
         case TTLConfig.INF =>
         case TTLConfig.TTL(d) => ctx.setReceiveTimeout(d, Stop(""))
       }
-      val cf = EntityContext(cfg.timeProvider, ctx.log)
+      val cf = EntityContext(cfg.clock, ctx.log)
       tew(cf,  init)
     }
   }
@@ -55,7 +55,7 @@ private[aurora] object EntityWrapper {
         case TTLConfig.INF =>
         case TTLConfig.TTL(d) => ctx.setReceiveTimeout(d, Stop(name))
       }
-      val cf = EntityContext(cfg.timeProvider, ctx.log)
+      val cf = EntityContext(cfg.clock, ctx.log)
       EventSourcedBehavior[EntityWrapperCommand[C, Q, R], E, A](
         persistenceId = PersistenceId(name),
         emptyState = init,
@@ -117,7 +117,7 @@ private[aurora] object EntityWrapper {
         case TTLConfig.INF =>
         case TTLConfig.TTL(d) => ctx.setReceiveTimeout(d, Stop(""))
       }
-      val cf = EntityContext(cfg.timeProvider, ctx.log)
+      val cf = EntityContext(cfg.clock, ctx.log)
       tew(cf, pa.get(name).getOrElse(init), name)
     }
   }
@@ -204,22 +204,15 @@ private[aurora] object Aggregate {
     b(new mutable.AnyRefMap(), 0L, init, name, create)
   }
 
-// FIXME - Fix this..
-/*
+
   def clusterAggregate[A <: Entity[A, C, Q, E, R], C, Q <: Query[R], E <: Event, R](init: A, name: String, create: (A, String) => Behavior[EntityWrapperCommand[C, Q, R]])(implicit e1: ClassTag[A], e2: ClassTag[C], e3: ClassTag[Q], e4: ClassTag[E], e5: ClassTag[R], cfg: EntityConfig[C]): Behavior[AggregateMessage[C, Q, R]] = {
     Behaviors.setup { cx =>
 
       val sharding = ClusterSharding(cx.system)
 
-      val TypeKey = EntityTypeKey[EntityWrapperCommand[C, Q, R]](name)
+      val typeKey = EntityTypeKey[EntityWrapperCommand[C, Q, R]](name)
 
-      val shardRegion: ActorRef[ShardingEnvelope[EntityWrapperCommand[C, Q, R]]] = sharding.spawn(
-        behavior = entityId => create(init, entityId),
-        props = Props.empty,
-        typeKey = TypeKey,
-        settings = ClusterShardingSettings(cx.system),
-        maxNumberOfShards = 10,
-        handOffStopMessage = Stop[C, Q, R](""))
+      val shardRegion: ActorRef[ShardingEnvelope[EntityWrapperCommand[C, Q, R]]] = sharding.init(akka.cluster.sharding.typed.scaladsl.Entity(typeKey, createBehavior = ctx => create(init, ctx.entityId)))
 
       Behaviors.receive {
         case (ctx, AggregateCommand(id, cmd)) =>
@@ -235,7 +228,7 @@ private[aurora] object Aggregate {
           val ch = ctx.messageAdapter[ShardingEnvelope[_]] { m =>
             if (e3.runtimeClass.isAssignableFrom(m.message.getClass))
               AggregateQuery(m.entityId, m.message.asInstanceOf[Q])
-            else if (e2.runtimeClass == classOf[EventReplyEnvelope[C @unchecked]])
+            else if (e2.runtimeClass == classOf[EventReplyEnvelope[C@unchecked]])
               AggregateStreamCommand(m.entityId, m.message.asInstanceOf[EventReplyEnvelope[C]])
             else
               AggregateCommand(m.entityId, m.message.asInstanceOf[C])
@@ -244,6 +237,5 @@ private[aurora] object Aggregate {
           Behavior.same
       }
     }
- */
-
+  }
 }
